@@ -1,3 +1,6 @@
+# Odysseus/COSMOS Project for CS360 Introduction to Database
+## Sungmin Choi, 20150908
+
 /******************************************************************************/
 /*                                                                            */
 /*    Copyright (c) 2013-2015, Kyu-Young Whang, KAIST                         */
