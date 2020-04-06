@@ -63,16 +63,13 @@
  *  Four edubfm_DeleteAll(void)
  */
 
-
 #include <stdlib.h> /* for malloc & free */
 #include "EduBfM_common.h"
 #include "EduBfM_Internal.h"
 
-
-
 /*@
  * macro definitions
- */  
+ */
 
 /* Macro: BFM_HASH(k,type)
  * Description: return the hash value of the key given as a parameter
@@ -81,8 +78,7 @@
  *  Four type       : buffer type
  * Returns: (Two) hash value
  */
-#define BFM_HASH(k,type)	(((k)->volNo + (k)->pageNo) % HASHTABLESIZE(type))
-
+#define BFM_HASH(k, type) (((k)->volNo + (k)->pageNo) % HASHTABLESIZE(type))
 
 /*@================================
  * edubfm_Insert()
@@ -102,27 +98,34 @@
  *    eBADBUFINDEX_BFM - bad index value for buffer table
  */
 Four edubfm_Insert(
-    BfMHashKey 		*key,			/* IN a hash key in Buffer Manager */
-    Two 		index,			/* IN an index used in the buffer pool */
-    Four 		type)			/* IN buffer type */
+    BfMHashKey *key, /* IN a hash key in Buffer Manager */
+    Two index,       /* IN an index used in the buffer pool */
+    Four type)       /* IN buffer type */
 {
-	/* These local variables are used in the solution code. However, you don¡¯t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
-    Four 		i;			
-    Two  		hashValue;
+    /* These local variables are used in the solution code. However, you donï¿½ï¿½t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
+    Four i;
+    Two hashValue;
 
+    CHECKKEY(key); /*@ check validity of key */
 
-    CHECKKEY(key);    /*@ check validity of key */
+    if ((index < 0) || (index > BI_NBUFS(type)))
+        ERR(eBADBUFINDEX_BFM);
 
-    if( (index < 0) || (index > BI_NBUFS(type)) )
-        ERR( eBADBUFINDEX_BFM );
+    hashValue = BFM_HASH(key, type);
+    i = BI_HASHTABLEENTRY(type, hashValue);
 
-   
+    if (i == NOTFOUND_IN_HTABLE)
+    { //no collision
+        BI_HASHTABLEENTRY(type, hashValue) = index;
+    }
+    else
+    { //collision
+        BI_NEXTHASHENTRY(type, index) = i;
+        BI_HASHTABLEENTRY(type, hashValue) = index;
+    }
+    return (eNOERROR);
 
-    return( eNOERROR );
-
-}  /* edubfm_Insert */
-
-
+} /* edubfm_Insert */
 
 /*@================================
  * edubfm_Delete()
@@ -142,23 +145,48 @@ Four edubfm_Insert(
  *    eNOTFOUND_BFM - The key isn't in the hash table.
  */
 Four edubfm_Delete(
-    BfMHashKey          *key,                   /* IN a hash key in buffer manager */
-    Four                type )                  /* IN buffer type */
+    BfMHashKey *key, /* IN a hash key in buffer manager */
+    Four type)       /* IN buffer type */
 {
-	/* These local variables are used in the solution code. However, you don¡¯t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
-    Two                 i, prev;                
-    Two                 hashValue;
+    /* These local variables are used in the solution code. However, you donï¿½ï¿½t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
+    Two i, prev;
+    Two hashValue;
 
+    CHECKKEY(key); /*@ check validity of key */
 
-    CHECKKEY(key);    /*@ check validity of key */
+    hashValue = BFM_HASH(key, type);
+    prev = NOTFOUND_IN_HTABLE;
 
+    i = BI_HASHTABLEENTRY(type, hashValue);
 
+    while (i != NOTFOUND_IN_HTABLE)
+    {
+        if (EQUALKEY(key, &(BI_KEY(type, i))))
+        {
+            //if found, delete the element at i and return
 
-    ERR( eNOTFOUND_BFM );
+            if (prev == NOTFOUND_IN_HTABLE)
+            {
+                BI_HASHTABLEENTRY(type, hashValue) = BI_NEXTHASHENTRY(type, i);
+            }
+            else
+            {
+                BI_NEXTHASHENTRY(type, prev) = BI_NEXTHASHENTRY(type, i);
+            }
 
-}  /* edubfm_Delete */
+            BI_NEXTHASHENTRY(type, i) = -1;
+            return (eNOERROR);
+        }
+        else
+        {
+            prev = i;
+            i = BI_NEXTHASHENTRY(type, i);
+        }
+    }
 
+    ERR(eNOTFOUND_BFM);
 
+} /* edubfm_Delete */
 
 /*@================================
  * edubfm_LookUp()
@@ -178,23 +206,30 @@ Four edubfm_Delete(
  *  (NOTFOUND_IN_HTABLE - The key don't exist in the hash table.)
  */
 Four edubfm_LookUp(
-    BfMHashKey          *key,                   /* IN a hash key in Buffer Manager */
-    Four                type)                   /* IN buffer type */
+    BfMHashKey *key, /* IN a hash key in Buffer Manager */
+    Four type)       /* IN buffer type */
 {
-	/* These local variables are used in the solution code. However, you don¡¯t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
-    Two                 i, j;                   /* indices */
-    Two                 hashValue;
+    /* These local variables are used in the solution code. However, you donï¿½ï¿½t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
+    Two i, j; /* indices */
+    Two hashValue;
 
+    CHECKKEY(key); /*@ check validity of key */
 
-    CHECKKEY(key);    /*@ check validity of key */
+    hashValue = BFM_HASH(key, type);
+    i = BI_HASHTABLEENTRY(type, hashValue);
 
+    while (i != NOTFOUND_IN_HTABLE)
+    {
+        if (EQUALKEY(key, &BI_KEY(type, i)))
+        {
+            return i;
+        }
+        i = BI_NEXTHASHENTRY(type, i);
+    }
 
+    return (NOTFOUND_IN_HTABLE);
 
-    return(NOTFOUND_IN_HTABLE);
-    
-}  /* edubfm_LookUp */
-
-
+} /* edubfm_LookUp */
 
 /*@================================
  * edubfm_DeleteAll()
@@ -213,12 +248,25 @@ Four edubfm_LookUp(
  */
 Four edubfm_DeleteAll(void)
 {
-	/* These local variables are used in the solution code. However, you don¡¯t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
-    Two 	i;
-    Four        tableSize;
-    
+    /* These local variables are used in the solution code. However, you donï¿½ï¿½t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
+    Two i;
+    Four tableSize;
 
+    Four type;
 
-    return(eNOERROR);
+    type = 0;
+    i = 0;
 
-} /* edubfm_DeleteAll() */ 
+    while (!IS_BAD_BUFFERTYPE(type))
+    {
+        if (i < HASHTABLESIZE(type))
+        {
+            BI_HASHTABLEENTRY(type, i) = NIL;
+            i++;
+        }
+        type++;
+    }
+
+    return (eNOERROR);
+
+} /* edubfm_DeleteAll() */

@@ -56,11 +56,9 @@
  *  Four edubfm_AllocTrain(Four)
  */
 
-
 #include <errno.h>
 #include "EduBfM_common.h"
 #include "EduBfM_Internal.h"
-
 
 extern CfgParams_T sm_cfgParams;
 
@@ -93,19 +91,53 @@ extern CfgParams_T sm_cfgParams;
  *     some errors caused by fuction calls
  */
 Four edubfm_AllocTrain(
-    Four 	type)			/* IN type of buffer (PAGE or TRAIN) */
+    Four type) /* IN type of buffer (PAGE or TRAIN) */
 {
-	/* These local variables are used in the solution code. However, you don¡¯t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
-    Four 	e;			/* for error */
-    Four 	victim;			/* return value */
-    Four 	i;
-    
+    /* These local variables are used in the solution code. However, you donï¿½ï¿½t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
+    Four e;      /* for error */
+    Four victim; /* return value */
+    Four i;
 
-	/* Error check whether using not supported functionality by EduBfM */
-	if(sm_cfgParams.useBulkFlush) ERR(eNOTSUPPORTED_EDUBFM);
+    /* Error check whether using not supported functionality by EduBfM */
+    if (sm_cfgParams.useBulkFlush)
+        ERR(eNOTSUPPORTED_EDUBFM);
 
+    victim = BI_NEXTVICTIM(type);
 
-    
-    return( victim );
-    
-}  /* edubfm_AllocTrain */
+    // loop twice for second chance buffer replacement
+
+    for (i = 0; i < 2 * BI_NBUFS(type); i++)
+    {
+        if (BI_FIXED(type, victim) == 0)
+        {
+            //element is not fixed
+            if ((BI_BITS(type, victim) & REFER) == 0)
+            {
+                //refer bit is 0, allocate it
+                if ((BI_BITS(type, victim) & DIRTY) != 0)
+                {
+                    edubfm_FlushTrain(&(BI_KEY(type, victim)), type);
+                }
+
+                //reset bits
+                BI_BITS(type, victim) = 0;
+                //get new victim
+                bufInfo[type].nextVictim = (victim + 1) % BI_NBUFS(type);
+                edubfm_Delete(&(BI_KEY(type, victim)), type);
+
+                return (victim);
+            }
+            else
+            {
+                //set refer bit to 0
+                BI_BITS(type, victim) = BI_BITS(type, victim) & ~(REFER);
+            }
+        }
+
+        victim = (victim + 1) % BI_NBUFS(type);
+    }
+
+    //No unfixed buffer element
+    ERR(eNOUNFIXEDBUF_BFM);
+
+} /* edubfm_AllocTrain */

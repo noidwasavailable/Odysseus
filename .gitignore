@@ -1,6 +1,7 @@
 # General
 *.[oa]
 !cosmos_*bit.o
+.gdb_history
 
 # EduCOSMOS
 *.vol

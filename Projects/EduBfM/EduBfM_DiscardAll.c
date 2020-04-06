@@ -56,11 +56,8 @@
  *  Four EduBfM_DiscardAll(void)
  */
 
-
 #include "EduBfM_common.h"
 #include "EduBfM_Internal.h"
-
-
 
 /*@================================
  * EduBfM_DiscardAll()
@@ -79,13 +76,27 @@
  */
 Four EduBfM_DiscardAll(void)
 {
-	/* These local variables are used in the solution code. However, you don¡¯t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
-    Four 	e;			/* error */
-    Two 	i;			/* index */
-    Four 	type;			/* buffer type */
+    /* These local variables are used in the solution code. However, you donï¿½ï¿½t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
+    Four e;    /* error */
+    Two i;     /* index */
+    Four type; /* buffer type */
 
+    for (int typeindex = 0; typeindex < 2; typeindex++)
+    {
+        if (typeindex == 0)
+            type = PAGE_BUF;
+        if (typeindex == 1)
+            type = LOT_LEAF_BUF;
 
+        for (i = 0; i < BI_NBUFS(type); i++)
+        {
+            bufInfo[type].bufTable[i].key.pageNo = -1;
+            bufInfo[type].bufTable[i].bits = ALL_0;
+        }
+    }
 
-    return(eNOERROR);
+    edubfm_DeleteAll();
 
-}  /* EduBfM_DiscardAll() */
+    return (eNOERROR);
+
+} /* EduBfM_DiscardAll() */

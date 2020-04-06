@@ -56,11 +56,8 @@
  *  Four EduBfM_GetTrain(TrainID *, char **, Four)
  */
 
-
 #include "EduBfM_common.h"
 #include "EduBfM_Internal.h"
-
-
 
 /*@================================
  * EduBfM_GetTrain()
@@ -92,24 +89,65 @@
  *     pointer to buffer holding the disk train indicated by `trainId'
  */
 Four EduBfM_GetTrain(
-    TrainID             *trainId,               /* IN train to be used */
-    char                **retBuf,               /* OUT pointer to the returned buffer */
-    Four                type )                  /* IN buffer type */
+    TrainID *trainId, /* IN train to be used */
+    char **retBuf,    /* OUT pointer to the returned buffer */
+    Four type)        /* IN buffer type */
 {
-	/* These local variables are used in the solution code. However, you don¡¯t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
-    Four                e;                      /* for error */
-    Four                index;                  /* index of the buffer pool */
-
+    /* These local variables are used in the solution code. However, you don't have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
+    Four e;     /* for error */
+    Four index; /* index of the buffer pool */
 
     /*@ Check the validity of given parameters */
     /* Some restrictions may be added         */
-    if(retBuf == NULL) ERR(eBADBUFFER_BFM);
+    if (retBuf == NULL)
+        ERR(eBADBUFFER_BFM);
 
     /* Is the buffer type valid? */
-    if(IS_BAD_BUFFERTYPE(type)) ERR(eBADBUFFERTYPE_BFM);	
+    if (IS_BAD_BUFFERTYPE(type))
+        ERR(eBADBUFFERTYPE_BFM);
 
+    //lookup the page in existing buffer pool
+    e = edubfm_LookUp(trainId, type);
 
+    if (e < 0)
+    { //lookup failed, allocate a new buffer element
+        e = edubfm_AllocTrain(type);
+        if (e < 0)
+        {
+            //error occured while allocating
+            ERR(e);
+        }
 
-    return(eNOERROR);   /* No error */
+        index = e;
+        e = edubfm_ReadTrain(trainId, BI_BUFFER(type, index), type);
 
-}  /* EduBfM_GetTrain() */
+        if (e < 0)
+        {
+            ERR(e);
+        };
+        //updating key to the hash key
+        BI_KEY(type, index) = *((BfMHashKey *)(trainId));
+        //incrementing fixed
+        BI_FIXED(type, index) = 1;
+        //setting refer bit to 1
+        BI_BITS(type, index) = BI_BITS(type, index) | REFER;
+        //no need to update DIRTY bit and nextHashEntry
+
+        //inserting this buffer to hashTable
+        edubfm_Insert(trainId, index, type);
+    }
+    else
+    { //lookup success
+        index = e;
+
+        //incrementing fixed
+        BI_FIXED(type, index) += 1;
+        //setting refer bit to 1
+        BI_BITS(type, index) = BI_BITS(type, index) | REFER;
+    }
+    //return the pointer to the allocated buffer element
+    *retBuf = BI_BUFFER(type, index);
+
+    return (eNOERROR); /* No error */
+
+} /* EduBfM_GetTrain() */

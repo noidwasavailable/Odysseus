@@ -56,11 +56,8 @@
  *  Four EduBfM_FreeTrain(TrainID *, Four)
  */
 
-
 #include "EduBfM_common.h"
 #include "EduBfM_Internal.h"
-
-
 
 /*@================================
  * EduBfM_FreeTrain()
@@ -80,19 +77,34 @@
  *    eBADBUFFERTYPE_BFM - bad buffer type
  *    some errors caused by fuction calls
  */
-Four EduBfM_FreeTrain( 
-    TrainID             *trainId,       /* IN train to be freed */
-    Four                type)           /* IN buffer type */
+Four EduBfM_FreeTrain(
+    TrainID *trainId, /* IN train to be freed */
+    Four type)        /* IN buffer type */
 {
-	/* These local variables are used in the solution code. However, you don¡¯t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
-    Four                index;          /* index on buffer holding the train */
-    Four 		e;		/* error code */
+    /* These local variables are used in the solution code. However, you donï¿½ï¿½t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
+    Four index; /* index on buffer holding the train */
+    Four e;     /* error code */
 
     /*@ check if the parameter is valid. */
-    if (IS_BAD_BUFFERTYPE(type)) ERR(eBADBUFFERTYPE_BFM);	
+    if (IS_BAD_BUFFERTYPE(type))
+        ERR(eBADBUFFERTYPE_BFM);
 
+    index = edubfm_LookUp(trainId, type);
 
-    
-    return( eNOERROR );
-    
+    if (index < 0)
+        ERR(eNOTFOUND_BFM);
+
+    //unfix
+    BI_FIXED(type, index) = BI_FIXED(type, index) - 1;
+
+    if (BI_FIXED(type, index) < 0)
+    { //if fixed < 0, print a warning and set it back to 0
+        printf("Warning: Fixed counter is less than 0!!!\n");
+        PRINT_TRAINID("trainId", trainId);
+
+        BI_FIXED(type, index) = 0;
+    }
+
+    return (eNOERROR);
+
 } /* EduBfM_FreeTrain() */

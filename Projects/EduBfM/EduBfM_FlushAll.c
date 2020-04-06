@@ -56,11 +56,8 @@
  *  Four EduBfM_FlushAll(void)
  */
 
-
 #include "EduBfM_common.h"
 #include "EduBfM_Internal.h"
-
-
 
 /*@================================
  * EduBfM_FlushAll()
@@ -80,14 +77,29 @@
  */
 Four EduBfM_FlushAll(void)
 {
-	/* These local variables are used in the solution code. However, you don¡¯t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
-    Four        e;                      /* error */
-    Two         i;                      /* index */
-    Four        type;                   /* buffer type */
+    /* These local variables are used in the solution code. However, you donï¿½ï¿½t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
+    Four e;    /* error */
+    Two i;     /* index */
+    Four type; /* buffer type */
 
-    
+    for (int typeindex = 0; typeindex < 2; typeindex++)
+    {
+        if (typeindex == 0)
+            type = PAGE_BUF;
+        if (typeindex == 1)
+            type = LOT_LEAF_BUF;
 
-    return( eNOERROR );
-    
-}  /* EduBfM_FlushAll() */
+        for (i = 0; i < BI_NBUFS(type); i++)
+        {
+            if ((BI_BITS(type, i) & DIRTY) == DIRTY)
+            {
+                e = edubfm_FlushTrain(&(BI_KEY(type, i)), type);
+            }
+            if (e < 0)
+                ERR(e);
+        }
+    }
 
+    return (eNOERROR);
+
+} /* EduBfM_FlushAll() */
