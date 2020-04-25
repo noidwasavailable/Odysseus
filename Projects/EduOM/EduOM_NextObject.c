@@ -56,7 +56,6 @@
  *  Four EduOM_NextObject(ObjectID*, ObjectID*, ObjectID*, ObjectHdr*)
  */
 
-
 #include "EduOM_common.h"
 #include "BfM.h"
 #include "EduOM_Internal.h"
@@ -89,34 +88,32 @@
  *     objHdr is filled with the next object's header
  */
 Four EduOM_NextObject(
-    ObjectID  *catObjForFile,	/* IN informations about a data file */
-    ObjectID  *curOID,		/* IN a ObjectID of the current Object */
-    ObjectID  *nextOID,		/* OUT the next Object of a current Object */
-    ObjectHdr *objHdr)		/* OUT the object header of next object */
+    ObjectID *catObjForFile, /* IN informations about a data file */
+    ObjectID *curOID,        /* IN a ObjectID of the current Object */
+    ObjectID *nextOID,       /* OUT the next Object of a current Object */
+    ObjectHdr *objHdr)       /* OUT the object header of next object */
 {
-	/* These local variables are used in the solution code. However, you don¡¯t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
-    Four e;			/* error */
-    Two  i;			/* index */
-    Four offset;		/* starting offset of object within a page */
-    PageID pid;			/* a page identifier */
-    PageNo pageNo;		/* a temporary var for next page's PageNo */
-    SlottedPage *apage;		/* a pointer to the data page */
-    Object *obj;		/* a pointer to the Object */
-    PhysicalFileID pFid;	/* file in which the objects are located */
-    SlottedPage *catPage;	/* buffer page containing the catalog object */
+    /* These local variables are used in the solution code. However, you donï¿½ï¿½t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
+    Four e;                         /* error */
+    Two i;                          /* index */
+    Four offset;                    /* starting offset of object within a page */
+    PageID pid;                     /* a page identifier */
+    PageNo pageNo;                  /* a temporary var for next page's PageNo */
+    SlottedPage *apage;             /* a pointer to the data page */
+    Object *obj;                    /* a pointer to the Object */
+    PhysicalFileID pFid;            /* file in which the objects are located */
+    SlottedPage *catPage;           /* buffer page containing the catalog object */
     sm_CatOverlayForData *catEntry; /* data structure for catalog object access */
-
-
 
     /*@
      * parameter checking
      */
-    if (catObjForFile == NULL) ERR(eBADCATALOGOBJECT_OM);
-    
-    if (nextOID == NULL) ERR(eBADOBJECTID_OM);
+    if (catObjForFile == NULL)
+        ERR(eBADCATALOGOBJECT_OM);
 
+    if (nextOID == NULL)
+        ERR(eBADOBJECTID_OM);
 
+    return (EOS); /* end of scan */
 
-    return(EOS);		/* end of scan */
-    
 } /* EduOM_NextObject() */

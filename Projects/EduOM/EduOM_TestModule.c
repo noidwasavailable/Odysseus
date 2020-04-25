@@ -59,41 +59,40 @@
 #include "EduOM_Internal.h"
 #include "EduOM_TestModule.h"
 
-
 Four main()
 {
 
-	Four	e;									/* for errors */
-	Four 	i;									/* loop index */
-	Four	handle;								/* system handle */
-	Four	numDevices = 0;						/* # of devices which consists formated volume */
-	char 	*devNames[MAX_DEVICES_IN_VOLUME];	/* device name */
-	char 	*title;								/* volume title */
-	Four 	volId;								/* volume identifier */
-	Two 	extSize;							/* size of an extent */
-	Four 	numPagesInDevices[MAX_DEVICES_IN_VOLUME];/* # of pages in the each devices */
-	Four 	segmentSize;						/* size of a segment */
-	XactID 	xactId;								/* transaction identifier */
+	Four e;										   /* for errors */
+	Four i;										   /* loop index */
+	Four handle;								   /* system handle */
+	Four numDevices = 0;						   /* # of devices which consists formated volume */
+	char *devNames[MAX_DEVICES_IN_VOLUME];		   /* device name */
+	char *title;								   /* volume title */
+	Four volId;									   /* volume identifier */
+	Two extSize;								   /* size of an extent */
+	Four numPagesInDevices[MAX_DEVICES_IN_VOLUME]; /* # of pages in the each devices */
+	Four segmentSize;							   /* size of a segment */
+	XactID xactId;								   /* transaction identifier */
 
 	/*
 	 *   Initialize the storage system 
 	 */
 	/* Initialize EduCOSMOS */
 	e = LRDS_Init();
-	if (e < eNOERROR){
+	if (e < eNOERROR)
+	{
 		printf("LRDS_Init failed!!!\n");
 		exit(1);
 	}
-	
-	
+
 	/* Allocate handle */
 	e = LRDS_AllocHandle(&handle);
-	if (e < eNOERROR) {
+	if (e < eNOERROR)
+	{
 		printf("LRDS_AllocHandle failed!!!\n");
 		LRDS_Final();
 		exit(1);
 	}
-	
 
 	/* Initialize the variable for LRDS_FormatDataVolume */
 	numDevices = 1;
@@ -107,8 +106,9 @@ Four main()
 	/*
 	 *  Format volume
 	 */
-    e = LRDS_FormatDataVolume(numDevices, devNames, title, volId, extSize, numPagesInDevices, segmentSize);
-	if (e < eNOERROR) {
+	e = LRDS_FormatDataVolume(numDevices, devNames, title, volId, extSize, numPagesInDevices, segmentSize);
+	if (e < eNOERROR)
+	{
 		printf("LRDS_FormatDataVolume failed!!!\n");
 		LRDS_FreeHandle(handle);
 		LRDS_Final();
@@ -117,26 +117,28 @@ Four main()
 
 	/*  Mount volume */
 	e = LRDS_Mount(numDevices, devNames, &volId);
-	if (e < eNOERROR){
+	if (e < eNOERROR)
+	{
 		printf("LRDS_Mount failed!!!\n");
 		LRDS_FreeHandle(handle);
 		LRDS_Final();
 		exit(1);
 	}
 
-	
 	/* Begin Transaction */
 	e = LRDS_BeginTransaction(&xactId, X_RR_RR);
-	if (e < eNOERROR){
+	if (e < eNOERROR)
+	{
 		LRDS_Dismount(volId);
 		LRDS_FreeHandle(handle);
 		LRDS_Final();
 	}
-	
+
 	/* Test EduOM */
 	e = EduOM_Test(volId, handle);
 
-	if (e < eNOERROR){
+	if (e < eNOERROR)
+	{
 		printf("EduOM_Test failed!!!\n");
 		LRDS_AbortTransaction(&xactId);
 		LRDS_Dismount(volId);
@@ -146,7 +148,8 @@ Four main()
 
 	/* Commit Transaction */
 	e = LRDS_CommitTransaction(&xactId);
-	if (e < eNOERROR){
+	if (e < eNOERROR)
+	{
 		printf("LRDS_CommitTransaction failed!!!\n");
 		LRDS_Dismount(volId);
 		LRDS_FreeHandle(handle);
@@ -154,8 +157,9 @@ Four main()
 	}
 
 	/* Dismount volume */
-	e= LRDS_Dismount(volId);
-	if (e < eNOERROR){
+	e = LRDS_Dismount(volId);
+	if (e < eNOERROR)
+	{
 		printf("LRDS_Dismount failed!!!\n");
 		LRDS_FreeHandle(handle);
 		LRDS_Final();
@@ -164,7 +168,8 @@ Four main()
 
 	/* Free Handle */
 	e = LRDS_FreeHandle(handle);
-	if (e < eNOERROR) {
+	if (e < eNOERROR)
+	{
 		printf("LRDS_FreeHandle failed!!!\n");
 		LRDS_Final();
 		exit(1);
@@ -172,7 +177,8 @@ Four main()
 
 	/* Finalize EduCOSMOS */
 	e = LRDS_Final();
-	if (e < eNOERROR) {
+	if (e < eNOERROR)
+	{
 		printf("LRDS_Final failed!!!\n");
 		exit(1);
 	}

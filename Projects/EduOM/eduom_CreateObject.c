@@ -56,14 +56,11 @@
  *  Four eduom_CreateObject(ObjectID*, ObjectID*, ObjectHdr*, Four, char*, ObjectID*)
  */
 
-
 #include <string.h>
 #include "EduOM_common.h"
-#include "RDsM.h"		/* for the raw disk manager call */
-#include "BfM.h"		/* for the buffer manager call */
+#include "RDsM.h" /* for the raw disk manager call */
+#include "BfM.h"  /* for the buffer manager call */
 #include "EduOM_Internal.h"
-
-
 
 /*@================================
  * eduom_CreateObject()
@@ -94,43 +91,43 @@
  *    some errors caused by fuction calls
  */
 Four eduom_CreateObject(
-    ObjectID	*catObjForFile,	/* IN file in which object is to be placed */
-    ObjectID 	*nearObj,	/* IN create the new object near this object */
-    ObjectHdr	*objHdr,	/* IN from which tag & properties are set */
-    Four	length,		/* IN amount of data */
-    char	*data,		/* IN the initial data for the object */
-    ObjectID	*oid)		/* OUT the object's ObjectID */
+    ObjectID *catObjForFile, /* IN file in which object is to be placed */
+    ObjectID *nearObj,       /* IN create the new object near this object */
+    ObjectHdr *objHdr,       /* IN from which tag & properties are set */
+    Four length,             /* IN amount of data */
+    char *data,              /* IN the initial data for the object */
+    ObjectID *oid)           /* OUT the object's ObjectID */
 {
-	/* These local variables are used in the solution code. However, you don¡¯t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
-    Four        e;		/* error number */
-    Four	neededSpace;	/* space needed to put new object [+ header] */
-    SlottedPage *apage;		/* pointer to the slotted page buffer */
-    Four        alignedLen;	/* aligned length of initial data */
-    Boolean     needToAllocPage;/* Is there a need to alloc a new page? */
-    PageID      pid;            /* PageID in which new object to be inserted */
-    PageID      nearPid;
-    Four        firstExt;	/* first Extent No of the file */
-    Object      *obj;		/* point to the newly created object */
-    Two         i;		/* index variable */
+    /* These local variables are used in the solution code. However, you donï¿½ï¿½t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
+    Four e;                  /* error number */
+    Four neededSpace;        /* space needed to put new object [+ header] */
+    SlottedPage *apage;      /* pointer to the slotted page buffer */
+    Four alignedLen;         /* aligned length of initial data */
+    Boolean needToAllocPage; /* Is there a need to alloc a new page? */
+    PageID pid;              /* PageID in which new object to be inserted */
+    PageID nearPid;
+    Four firstExt;                  /* first Extent No of the file */
+    Object *obj;                    /* point to the newly created object */
+    Two i;                          /* index variable */
     sm_CatOverlayForData *catEntry; /* pointer to data file catalog information */
-    SlottedPage *catPage;	/* pointer to buffer containing the catalog */
-    FileID      fid;		/* ID of file where the new object is placed */
-    Two         eff;		/* extent fill factor of file */
-    Boolean     isTmp;
+    SlottedPage *catPage;           /* pointer to buffer containing the catalog */
+    FileID fid;                     /* ID of file where the new object is placed */
+    Two eff;                        /* extent fill factor of file */
+    Boolean isTmp;
     PhysicalFileID pFid;
-    
 
     /*@ parameter checking */
-    
-    if (catObjForFile == NULL) ERR(eBADCATALOGOBJECT_OM);
 
-    if (objHdr == NULL) ERR(eBADOBJECTID_OM);
-    
+    if (catObjForFile == NULL)
+        ERR(eBADCATALOGOBJECT_OM);
+
+    if (objHdr == NULL)
+        ERR(eBADOBJECTID_OM);
+
     /* Error check whether using not supported functionality by EduOM */
-    if(ALIGNED_LENGTH(length) > LRGOBJ_THRESHOLD) ERR(eNOTSUPPORTED_EDUOM);
+    if (ALIGNED_LENGTH(length) > LRGOBJ_THRESHOLD)
+        ERR(eNOTSUPPORTED_EDUOM);
 
+    return (eNOERROR);
 
-
-    return(eNOERROR);
-    
 } /* eduom_CreateObject() */
