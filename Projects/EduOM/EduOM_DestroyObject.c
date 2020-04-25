@@ -129,6 +129,108 @@ Four EduOM_DestroyObject(
     if (oid == NULL)
         ERR(eBADOBJECTID_OM);
 
+    //get the page containing the catalog object
+    e = BfM_GetTrain((TrainID *)catObjForFile, (char **)&catPage, PAGE_BUF);
+    if (e < 0)
+        ERR(e);
+
+    e = BfM_FreeTrain((TrainID *)catObjForFile, PAGE_BUF);
+    if (e < 0)
+        ERR(e);
+
+    //get the object to destroy
+    pid.pageNo = oid->pageNo;
+    pid.volNo = oid->volNo;
+
+    //get the page that contains the object to destroy
+    e = BfM_GetTrain((TrainID *)&pid, (char **)&apage, PAGE_BUF);
+    if (e < 0)
+        ERR(e);
+
+    e = BfM_FreeTrain((TrainID *)&pid, PAGE_BUF);
+    if (e < 0)
+        ERR(e);
+
+    e = BfM_SetDirty((TrainID *)&pid, PAGE_BUF);
+    if (e < 0)
+        ERRB1(e, &pid, PAGE_BUF);
+
+    if (oid->slotNo == (apage->header.nSlots - 1))
+    {
+        last = 1;
+    }
+    else
+    {
+        last = 0;
+    }
+
+    //remove the page that contains the object to destroy
+    e = om_RemoveFromAvailSpaceList(catObjForFile, &pid, apage);
+    if (e < 0)
+        ERRB1(e, &pid, PAGE_BUF);
+
+    //get the object to destroy
+    offset = apage->slot[-(oid->slotNo)].offset;
+    obj = &(apage->data[offset]);
+
+    //set the slot that contained the object to be empty
+    apage->slot[-(oid->slotNo)].offset = EMPTYSLOT;
+
+    //update the header
+    if (last)
+    { //if object was last, reduce the number of slots
+        apage->header.nSlots--;
+    }
+
+    alignedLen = ALIGNED_LENGTH(obj->header.length);
+
+    //if the object to be destroyed is the last object
+    if (sizeof(ObjectHdr) + offset + alignedLen == apage->header.free)
+    {
+        //update free
+        apage->header.free = offset;
+    }
+    else //if contiguous free space stays the same
+    {
+        //update unused
+        //add size of the deleted object
+        apage->header.unused = apage->header.unused + sizeof(ObjectHdr) + alignedLen;
+
+        if (last)
+        { //add the size of slotted page slot if it was the last object
+            apage->header.unused += sizeof(SlottedPageSlot);
+        }
+    }
+
+    //if the object was the only object in the page
+    //and the page is not the first page of the file
+    if (apage->header.free == 0 && (pid.pageNo != catEntry->firstPage))
+    {
+
+        e = om_FileMapDeletePage(catObjForFile, &pid);
+
+        if (e < 0)
+            ERRB1(catObjForFile, &pid, PAGE_BUF);
+
+        e = Util_getElementFromPool(dlPool, &dlElem);
+
+        if (e < 0)
+            ERR(e);
+
+        dlElem->type = DL_PAGE;
+        dlElem->elem.pid = pid;
+        dlElem->next = dlHead->next;
+        dlHead->next = dlElem;
+    }
+    //if the object was not the only object in the page
+    //or the page is the first page of the file
+    else
+    {
+        e = om_PutInAvailSpaceList(catObjForFile, &pid, apage);
+        if (e < 0)
+            ERRB1(e, &pid, PAGE_BUF);
+    }
+
     return (eNOERROR);
 
 } /* EduOM_DestroyObject() */
