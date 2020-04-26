@@ -114,7 +114,96 @@ Four EduOM_NextObject(
     if (nextOID == NULL)
         ERR(eBADOBJECTID_OM);
 
-    //test line for test commit for credentials
+    e = BfM_GetTrain((TrainID *)catObjForFile, &catPage, PAGE_BUF);
+    if (e < 0)
+        ERR(e);
+    e = BfM_FreeTrain((TrainID *)catObjForFile, PAGE_BUF);
+    if (e < 0)
+        ERR(e);
+
+    GET_PTR_TO_CATENTRY_FOR_DATA(catObjForFile, catPage, catEntry);
+    MAKE_PHYSICALFILEID(pFid, catObjForFile->volNo, catObjForFile->pageNo);
+
+    //if curOID is NULL
+    if (curOID == NULL)
+    {
+        //get the first object
+        pid.volNo = pFid.volNo;
+        pid.pageNo = catEntry->firstPage;
+        pageNo = pid.pageNo;
+
+        //get the first obj in the slot array of the first page
+        while (pageNo != NULL)
+        {
+            e = BfM_GetTrain((TrainID *)&pid, &apage, PAGE_BUF);
+            if (e < 0)
+                ERR(e);
+            e = BfM_FreeTrain((TrainID *)&pid, PAGE_BUF);
+            if (e < 0)
+                ERR(e);
+
+            for (i = 0; i < apage->header.nSlots; i++)
+            {
+                if (apage->slot[-i].offset != EMPTYSLOT)
+                { //found
+                    offset = apage->slot[-i].offset;
+                    obj = apage->data[offset];
+
+                    //get the next object
+                    MAKE_OBJECTID(*nextOID, pid.volNo, pid.pageNo, i, apage->slot[-i].unique);
+                    objHdr = &(obj->header);
+
+                    return e;
+                }
+            }
+            //current page has no object. Get the next page
+            pageNo = apage->header.nextPage;
+            MAKE_PAGEID(pid, pFid.volNo, pid.pageNo);
+        }
+        //if the code reached here, the file is empty.
+        //return EOS (End of Scan)
+    }
+    //if curOID is not NULL
+    else
+    {
+        pid.pageNo = curOID->pageNo;
+        pid.volNo = curOID->volNo;
+
+        //search for object with curOID
+        pageNo = curOID->pageNo;
+        i = curOID->slotNo + 1;
+
+        while (pageNo != NULL)
+        {
+            e = BfM_GetTrain((TrainID *)&pid, &apage, PAGE_BUF);
+            if (e < 0)
+                ERR(e);
+            e = BfM_FreeTrain((TrainID *)&pid, PAGE_BUF);
+            if (e < 0)
+                ERR(e);
+
+            for (; i < apage->header.nSlots; i++)
+            {
+                if (apage->slot[-i].offset != EMPTYSLOT)
+                {
+                    //found
+                    offset = apage->slot[-i].offset;
+                    obj = &apage->data[offset];
+                    MAKE_OBJECTID(*nextOID, pid.volNo, pid.pageNo, i, apage->slot[-i].unique);
+                    objHdr = &obj->header;
+
+                    return e;
+                }
+            }
+            //page empty, move on to the next page
+            i = 0;
+            pageNo = apage->header.nextPage;
+
+            MAKE_PAGEID(pid, pFid.volNo, pageNo);
+        }
+        //if the code reached here, given object is the last object of the last page
+        //return EOS
+    }
 
     return (EOS); /* end of scan */
 
