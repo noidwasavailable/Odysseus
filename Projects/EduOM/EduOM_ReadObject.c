@@ -120,6 +120,8 @@ Four EduOM_ReadObject(
     Object *obj;        /* pointer to the object in the slotted page */
     Four offset;        /* offset of the object in the page */
 
+    Four bytes_read;
+
     /*@ check parameters */
 
     if (oid == NULL)
@@ -131,6 +133,41 @@ Four EduOM_ReadObject(
     if (buf == NULL)
         ERR(eBADUSERBUF_OM);
 
-    return (length);
+    // a. Read in the slotted page
+    pid.volNo = oid->volNo;
+    pid.pageNo = oid->pageNo;
+
+    e = BfM_GetTrain((TrainID *)&pid, &apage, PAGE_BUF);
+    if (e < 0)
+        ERR(e);
+
+    // b. See the object header
+    offset = apage->slot[-(oid->slotNo)].offset;
+    obj = &(apage->data[offset]);
+
+    //move the offset to the given start point
+    offset += sizeof(ObjectHdr) + start;
+
+    // c. Read the object
+
+    //if length == REMAINDER, set length such that data is read to the end
+    if (length == REMAINDER)
+    {
+        length = obj->header.length - start;
+    }
+
+    // Read as much data as length from start in the data area
+    for (bytes_read = 0; bytes_read < length; bytes_read++)
+    {
+        buf[bytes_read] = apage->data[offset + bytes_read];
+    }
+
+    // d. Free the buffer page
+    e = BfM_FreeTrain((TrainID *)&pid, PAGE_BUF);
+    if (e < 0)
+        ERR(e);
+
+    // e. Return
+    return (bytes_read);
 
 } /* EduOM_ReadObject() */

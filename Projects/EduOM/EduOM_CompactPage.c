@@ -109,6 +109,58 @@ Four EduOM_CompactPage(
     Two lastSlot;        /* last non empty slot */
     Two i;               /* index variable */
 
+    //adjust the offsets of the objects
+
+    tpage = *apage;
+    apageDataOffset = 0;
+    len = 0;
+
+    //if slotNo given is not NIL
+    if (slotNo != NIL)
+    {
+        //store all the objects contiguously except the object corresponding to slotNo
+        for (i = 0; i < apage->header.nSlots; i++)
+        {
+            if (i != slotNo)
+            {
+                //then store
+                apageDataOffset = tpage.slot[-i].offset;
+
+                if (apageDataOffset == EMPTYSLOT)
+                    continue;
+
+                obj = (Object *)&(tpage.data[apageDataOffset]);
+                apage->data[len] = obj;
+                len += sizeof(ObjectHdr) + ALIGNED_LENGTH(obj->header.length);
+            }
+        }
+        //then store the object corresponding to slotNo
+        apageDataOffset = tpage.slot[slotNo].offset;
+
+        obj = (Object *)&(tpage.data[apageDataOffset]);
+        apage->data[len] = obj;
+    } //if slotNo is NIL
+    else
+    {
+        //store all the objects contiguously
+        for (i = 0; i < apage->header.nSlots; i++)
+        {
+            //then store
+            apageDataOffset = tpage.slot[-i].offset;
+
+            if (apageDataOffset == EMPTYSLOT)
+                continue;
+
+            obj = (Object *)&(tpage.data[apageDataOffset]);
+            apage->data[len] = obj;
+            len += sizeof(ObjectHdr) + ALIGNED_LENGTH(obj->header.length);
+        }
+    }
+
+    //update the page header
+    apage->header.free = len;
+    apage->header.unused = 0;
+
     return (eNOERROR);
 
 } /* EduOM_CompactPage */
