@@ -114,6 +114,8 @@ Four EduOM_NextObject(
     if (nextOID == NULL)
         ERR(eBADOBJECTID_OM);
 
+    //test line for test commit for credentials
+
     return (EOS); /* end of scan */
 
 } /* EduOM_NextObject() */
