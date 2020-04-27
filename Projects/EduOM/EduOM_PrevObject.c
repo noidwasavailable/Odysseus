@@ -114,9 +114,6 @@ Four EduOM_PrevObject(
     e = BfM_GetTrain((TrainID *)catObjForFile, &catPage, PAGE_BUF);
     if (e < 0)
         ERR(e);
-    e = BfM_FreeTrain((TrainID *)catObjForFile, PAGE_BUF);
-    if (e < 0)
-        ERR(e);
 
     GET_PTR_TO_CATENTRY_FOR_DATA(catObjForFile, catPage, catEntry);
 
@@ -125,7 +122,7 @@ Four EduOM_PrevObject(
     {
         //get the first object
         pid.volNo = catObjForFile->volNo;
-        pid.pageNo = catEntry->firstPage;
+        pid.pageNo = catEntry->lastPage;
         pageNo = pid.pageNo;
 
         //get the last obj in the slot array of the last page
@@ -134,26 +131,36 @@ Four EduOM_PrevObject(
             e = BfM_GetTrain((TrainID *)&pid, &apage, PAGE_BUF);
             if (e < 0)
                 ERR(e);
-            e = BfM_FreeTrain((TrainID *)&pid, PAGE_BUF);
-            if (e < 0)
-                ERR(e);
 
             for (i = apage->header.nSlots - 1; i >= 0; i--)
             {
                 if (apage->slot[-i].offset != EMPTYSLOT)
                 { //found
                     offset = apage->slot[-i].offset;
-                    obj = apage->data[offset];
+                    obj = (Object *)&(apage->data[offset]);
 
                     //get the previous object
                     MAKE_OBJECTID(*prevOID, pid.volNo, pid.pageNo, i, apage->slot[-i].unique);
                     objHdr = &(obj->header);
+
+                    e = BfM_FreeTrain((TrainID *)catObjForFile, PAGE_BUF);
+                    if (e < 0)
+                        ERR(e);
+
+                    e = BfM_FreeTrain((TrainID *)&pid, PAGE_BUF);
+                    if (e < 0)
+                        ERR(e);
 
                     return e;
                 }
             }
             //current page has no object. Get the previous page
             pageNo = apage->header.prevPage;
+
+            e = BfM_FreeTrain((TrainID *)&pid, PAGE_BUF);
+            if (e < 0)
+                ERR(e);
+
             MAKE_PAGEID(pid, catObjForFile->volNo, pid.pageNo);
         }
         //if the code reached here, the file is empty.
@@ -175,9 +182,6 @@ Four EduOM_PrevObject(
             e = BfM_GetTrain((TrainID *)&pid, &apage, PAGE_BUF);
             if (e < 0)
                 ERR(e);
-            e = BfM_FreeTrain((TrainID *)&pid, PAGE_BUF);
-            if (e < 0)
-                ERR(e);
 
             if (initLoop)
             { //first time in the loop
@@ -195,21 +199,37 @@ Four EduOM_PrevObject(
                 {
                     //found
                     offset = apage->slot[-i].offset;
-                    obj = &apage->data[offset];
+                    obj = (Object *)&(apage->data[offset]);
                     MAKE_OBJECTID(*prevOID, pid.volNo, pid.pageNo, i, apage->slot[-i].unique);
                     objHdr = &obj->header;
+
+                    e = BfM_FreeTrain((TrainID *)catObjForFile, PAGE_BUF);
+                    if (e < 0)
+                        ERR(e);
+
+                    e = BfM_FreeTrain((TrainID *)&pid, PAGE_BUF);
+                    if (e < 0)
+                        ERR(e);
 
                     return e;
                 }
             }
             //page empty, move on to the next page
-            pageNo = apage->header.nextPage;
+            pageNo = apage->header.prevPage;
+
+            e = BfM_FreeTrain((TrainID *)&pid, PAGE_BUF);
+            if (e < 0)
+                ERR(e);
 
             MAKE_PAGEID(pid, catObjForFile->volNo, pageNo);
         }
         //if the code reached here, given object is the last object of the last page
         //return EOS
     }
+
+    e = BfM_FreeTrain((TrainID *)catObjForFile, PAGE_BUF);
+    if (e < 0)
+        ERR(e);
 
     return (EOS);
 
