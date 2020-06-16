@@ -56,13 +56,10 @@
  *  Four EduBtM_InsertObject(ObjectID*, PageID*, KeyDesc*, KeyValue*, ObjectID*, Pool*, DeallocListElem*)
  */
 
-
 #include "EduBtM_common.h"
 #include "BfM.h"
 #include "EduBtM_Internal.h"
 #include "OM_Internal.h"
-
-
 
 /*@================================
  * EduBtM_InsertObject() 
@@ -84,45 +81,70 @@
  *    some errors caused by function calls
  */
 Four EduBtM_InsertObject(
-    ObjectID *catObjForFile,	/* IN catalog object of B+ tree file */
-    PageID   *root,		/* IN the root of Btree */
-    KeyDesc  *kdesc,		/* IN key descriptor */
-    KeyValue *kval,		/* IN key value */
-    ObjectID *oid,		/* IN ObjectID which will be inserted */
-    Pool     *dlPool,		/* INOUT pool of dealloc list */
+    ObjectID *catObjForFile, /* IN catalog object of B+ tree file */
+    PageID *root,            /* IN the root of Btree */
+    KeyDesc *kdesc,          /* IN key descriptor */
+    KeyValue *kval,          /* IN key value */
+    ObjectID *oid,           /* IN ObjectID which will be inserted */
+    Pool *dlPool,            /* INOUT pool of dealloc list */
     DeallocListElem *dlHead) /* INOUT head of the dealloc list */
 {
-	/* These local variables are used in the solution code. However, you don¡¯t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
+    /* These local variables are used in the solution code. However, you donï¿½ï¿½t have to use all these variables in your code, and you may also declare and use additional local variables if needed. */
     int i;
-    Four e;			/* error number */
-    Boolean lh;			/* for spliting */
-    Boolean lf;			/* for merging */
-    InternalItem item;		/* Internal Item */
-    SlottedPage *catPage;	/* buffer page containing the catalog object */
+    Four e;                          /* error number */
+    Boolean lh;                      /* for spliting */
+    Boolean lf;                      /* for merging */
+    InternalItem item;               /* Internal Item */
+    SlottedPage *catPage;            /* buffer page containing the catalog object */
     sm_CatOverlayForBtree *catEntry; /* pointer to Btree file catalog information */
-    PhysicalFileID pFid;	 /* B+-tree file's FileID */
+    PhysicalFileID pFid;             /* B+-tree file's FileID */
 
-    
     /*@ check parameters */
-    
-    if (catObjForFile == NULL) ERR(eBADPARAMETER_BTM);
-    
-    if (root == NULL) ERR(eBADPARAMETER_BTM);
 
-    if (kdesc == NULL) ERR(eBADPARAMETER_BTM);
+    if (catObjForFile == NULL)
+        ERR(eBADPARAMETER_BTM);
 
-    if (kval == NULL) ERR(eBADPARAMETER_BTM);
+    if (root == NULL)
+        ERR(eBADPARAMETER_BTM);
 
-    if (oid == NULL) ERR(eBADPARAMETER_BTM);    
+    if (kdesc == NULL)
+        ERR(eBADPARAMETER_BTM);
+
+    if (kval == NULL)
+        ERR(eBADPARAMETER_BTM);
+
+    if (oid == NULL)
+        ERR(eBADPARAMETER_BTM);
 
     /* Error check whether using not supported functionality by EduBtM */
-    for(i=0; i<kdesc->nparts; i++)
+    for (i = 0; i < kdesc->nparts; i++)
     {
-        if(kdesc->kpart[i].type!=SM_INT && kdesc->kpart[i].type!=SM_VARSTRING)
+        if (kdesc->kpart[i].type != SM_INT && kdesc->kpart[i].type != SM_VARSTRING)
             ERR(eNOTSUPPORTED_EDUBTM);
     }
-    
-    
-    return(eNOERROR);
-    
-}   /* EduBtM_InsertObject() */
+
+    e = BfM_GetTrain((TrainID *)catObjForFile, (char **)&catPage, PAGE_BUF);
+    if (e < 0)
+        ERR(e);
+
+    e = BfM_FreeTrain((TrainID *)catObjForFile, PAGE_BUF);
+    if (e < 0)
+        ERR(e);
+
+    GET_PTR_TO_CATENTRY_FOR_BTREE(catObjForFile, catPage, catEntry);
+
+    MAKE_PHYSICALFILEID(pFid, catEntry->fid.volNo, catEntry->firstPage);
+
+    e = btm_Insert(catObjForFile, root, kdesc, kval, oid, &lf, &lh, &item, dlPool, dlHead);
+    if (e < 0)
+        ERR(e);
+
+    //if root page has been split, call edubtm_root_insert().
+    if (lh)
+    {
+        e = btm_root_insert(catObjForFile, root, &item);
+    }
+
+    return (eNOERROR);
+
+} /* EduBtM_InsertObject() */
